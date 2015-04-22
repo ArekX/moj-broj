@@ -10,7 +10,6 @@ namespace MojBroj
     class Evaluator
     {
         List<int> values;
-        List<int> selectors;
         List<string> operators;
 
         List<List<int>> valuesPermutationList;
@@ -21,7 +20,6 @@ namespace MojBroj
         public Evaluator(List<int> values)
         {
             this.values = values;
-            selectors = new List<int>();
             operators = new List<string>();
 
             valuesPermutationList = values.GetAllPermutations();
@@ -31,65 +29,52 @@ namespace MojBroj
                 operators.Add("+");
             }
 
-            for (int i = 0; i < 2 * values.Count - 1; i++)
-            {
-                selectors.Add(0);
-            }
-
-            for (int i = values.Count; i < selectors.Count; i++)
-            {
-                selectors[i] = 1;
-            }
-
             this.values.Sort();
         }
 
         private float Evaluate(Stack<float> stack)
         {
-            int valueIndex = 0, opIndex = 0;
+            int opIndex = 0;
 
-            foreach(int selector in this.selectors)
+            foreach (float value in this.values)
             {
-                if (selector == 0)
-                {
-                    if (valueIndex < this.values.Count)
-                    stack.Push(this.values[valueIndex++]);
-                    continue;
-                }
+                stack.Push(value);
+            }
 
-                float lastNumber = stack.Pop();
-                float returnNumber = stack.Pop();
-                
+            for (int i = 0; i < this.values.Count - 1; i++)
+            {
+                float rightOperand = stack.Pop();
+                float leftOperand = stack.Pop();
 
-                switch(this.operators[opIndex++])
+                switch (this.operators[opIndex++])
                 {
                     case "+":
-                        returnNumber += lastNumber;
+                        leftOperand += rightOperand;
                         break;
                     case "-":
-                        returnNumber -= lastNumber;
+                        leftOperand -= rightOperand;
                         break;
                     case "*":
-                        returnNumber *= lastNumber;
+                        leftOperand *= rightOperand;
                         break;
                     case "/":
-                        if (lastNumber == 0)
+                        if (rightOperand == 0)
                         {
                             return 999999999;
                         }
 
-                        float testNumber = returnNumber / lastNumber;
+                        float testNumber = leftOperand / rightOperand;
 
-                        if (testNumber * lastNumber != returnNumber)
+                        if (testNumber * leftOperand != rightOperand)
                         {
                             return 999999999;
                         }
 
-                        returnNumber = testNumber;
+                        leftOperand = testNumber;
                         break;
                 }
 
-                stack.Push(returnNumber);
+                stack.Push(leftOperand);
             }
 
             return stack.Pop();
@@ -143,21 +128,19 @@ namespace MojBroj
         {
             Stack<string> stringStack = new Stack<string>();
 
-            int valueIndex = 0, opIndex = 0;
+            int opIndex = 0;
 
-            foreach (int selector in this.selectors)
+            foreach (float value in this.values)
             {
-                if (selector == 0)
-                {
-                    if (valueIndex < this.values.Count)
-                    stringStack.Push(this.values[valueIndex++].ToString());
-                    continue;
-                }
+                stringStack.Push(value.ToString());
+            }
 
-                string stackTop = stringStack.Pop();
-                string lastStack = stringStack.Pop();
+            for (int i = 0; i < this.values.Count - 1; i++)
+            {
+                string rightOperand = stringStack.Pop();
+                string leftOperand = stringStack.Pop();
 
-                stringStack.Push(MakeExpression(lastStack, this.operators[opIndex++], stackTop));
+                stringStack.Push(MakeExpression(leftOperand, this.operators[opIndex++], rightOperand));
             }
 
             return stringStack.Peek();
